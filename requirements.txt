@@ -2,16 +2,15 @@
 streamlit==1.30.0
 google-api-python-client==2.100.0
 google-generativeai==0.3.0
-youtube-dl==2021.12.17
-pytube==15.0.0
-
-# Utility packages
-python-dotenv==1.0.0
+youtube-transcript-api==0.6.1
 requests==2.31.0
-pandas==2.1.0
+
+# Utility
+python-dotenv==1.0.0
 
 # Data handling
+pandas==2.1.0
 protobuf==3.20.0
 
-# 日本語テキスト処理
+# Japanese text processing
 janome==0.5.0 
