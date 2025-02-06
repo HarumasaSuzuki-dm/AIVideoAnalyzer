@@ -5,8 +5,8 @@ import re
 
 class YouTubeAPI:
     def __init__(self, api_key: str):
-        self.youtube = build('youtube', 'v3', developerApiKey=api_key)
-    
+        self.youtube = build('youtube', 'v3', developerKey=api_key)
+
     def extract_video_id(self, url: str) -> Optional[str]:
         """Extract video ID from YouTube URL."""
         patterns = [
@@ -14,7 +14,7 @@ class YouTubeAPI:
             r'(?:embed\/)([0-9A-Za-z_-]{11})',
             r'(?:youtu\.be\/)([0-9A-Za-z_-]{11})'
         ]
-        
+
         for pattern in patterns:
             match = re.search(pattern, url)
             if match:
@@ -68,8 +68,8 @@ class YouTubeAPI:
         # Remove timestamps and numbers
         cleaned_text = re.sub(r'\d{2}:\d{2}:\d{2},\d{3} --> \d{2}:\d{2}:\d{2},\d{3}', '', caption_text)
         cleaned_text = re.sub(r'^\d+$', '', cleaned_text, flags=re.MULTILINE)
-        
+
         # Remove extra whitespace and newlines
         cleaned_text = ' '.join(cleaned_text.split())
-        
+
         return cleaned_text

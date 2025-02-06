@@ -1,52 +1,47 @@
-from sqlalchemy import create_engine, Column, Integer, String, Text, Float, DateTime, JSON
+import os
+from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-import os
 from datetime import datetime
+import logging
 
-# Get database URL from environment variables
-DATABASE_URL = os.getenv('DATABASE_URL')
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Database configuration
+DATABASE_URL = os.environ.get('DATABASE_URL')
 if not DATABASE_URL:
-    raise ValueError("DATABASE_URL is not set in environment variables")
+    logger.error("DATABASE_URL is not set")
+    raise ValueError("DATABASE_URL is not set")
 
-# Create database engine
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+try:
+    # Create database engine
+    engine = create_engine(DATABASE_URL)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base = declarative_base()
 
-# Create base class for declarative models
-Base = declarative_base()
+    # Define Interview model
+    class Interview(Base):
+        __tablename__ = "interviews"
 
-class Interview(Base):
-    """Model for storing interview analysis results."""
-    __tablename__ = "interviews"
+        id = Column(Integer, primary_key=True)
+        video_id = Column(String, unique=True)
+        video_title = Column(String)
+        transcript = Column(Text)
+        created_at = Column(DateTime, default=datetime.utcnow)
 
-    id = Column(Integer, primary_key=True, index=True)
-    video_id = Column(String, unique=True, index=True)
-    video_title = Column(String)
-    video_url = Column(String)
-    transcript = Column(Text)
-    summary_brief = Column(Text)
-    summary_detailed = Column(Text)
-    key_phrases = Column(JSON)
-    sentiment_scores = Column(JSON)
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    # Create tables
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database tables created successfully")
+
+except Exception as e:
+    logger.error(f"Database initialization error: {str(e)}")
+    raise
 
 def get_db():
-    """Get database session."""
     db = SessionLocal()
     try:
         yield db
     finally:
         db.close()
-
-# Initialize database tables
-def init_db():
-    try:
-        Base.metadata.create_all(bind=engine)
-        print("Database tables created successfully")
-    except Exception as e:
-        print(f"Error creating database tables: {str(e)}")
-
-# Create tables on import
-init_db()
