@@ -45,7 +45,8 @@ def check_api_keys():
 def init_apis():
     youtube_api = YouTubeAPI(st.secrets["YOUTUBE_API_KEY"])
     text_analyzer = TextAnalyzer(st.secrets["GEMINI_API_KEY"])
-    storage = JsonStorage("data/interviews.json")  # JSONストレージの初期化
+    os.makedirs("data", exist_ok=True)
+    storage = JsonStorage("data/interviews.json")
     return youtube_api, text_analyzer, storage
 
 def main():
