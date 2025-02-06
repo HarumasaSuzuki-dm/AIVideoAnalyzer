@@ -11,7 +11,6 @@ google-generativeai>=0.3.0
 # ユーティリティ
 python-dotenv>=1.0.0
 requests>=2.31.0
-pandas>=2.1.0
 
 # 日本語テキスト処理
 janome>=0.5.0 

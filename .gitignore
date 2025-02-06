@@ -30,6 +30,7 @@ stm-app/
 
 # Data
 data/*.json
+!data/.gitkeep
 
 # IDE
 .idea/
