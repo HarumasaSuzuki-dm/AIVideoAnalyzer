@@ -2,11 +2,15 @@ from typing import Dict, Optional
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import re
+import logging
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import TextFormatter
 
+logger = logging.getLogger(__name__)
+
 class YouTubeAPI:
     def __init__(self, api_key: str):
+        self.api_key = api_key
         self.youtube = build('youtube', 'v3', developerKey=api_key)
 
     def extract_video_id(self, url: str) -> Optional[str]:
@@ -42,25 +46,26 @@ class YouTubeAPI:
                 'duration': video['contentDetails']['duration']
             }
         except HttpError as e:
-            raise Exception(f"Error fetching video details: {str(e)}")
+            logger.error(f"Error fetching video details: {str(e)}")
+            raise
 
-    def get_captions(self, video_id: str) -> str:
+    def get_captions(self, video_id: str) -> Optional[str]:
         """Get video captions including auto-generated ones"""
         try:
-            # まず手動字幕を試す
             transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
             
             try:
-                # 日本語字幕を優先
                 transcript = transcript_list.find_transcript(['ja'])
             except:
                 try:
-                    # 日本語がなければ英語字幕を取得
                     transcript = transcript_list.find_transcript(['en'])
                 except:
-                    # 手動字幕がない場合は自動生成字幕を試す
-                    transcript = transcript_list.find_generated_transcript(['ja', 'en'])
-            
+                    try:
+                        transcript = transcript_list.find_generated_transcript(['ja', 'en'])
+                    except Exception as e:
+                        logger.error(f"No transcripts found: {str(e)}")
+                        return None
+
             formatter = TextFormatter()
             return formatter.format_transcript(transcript.fetch())
             

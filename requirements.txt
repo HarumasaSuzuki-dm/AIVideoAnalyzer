@@ -2,7 +2,7 @@
 streamlit==1.30.0
 google-api-python-client==2.100.0
 google-generativeai==0.3.0
-youtube-transcript-api==0.6.1
+youtube_transcript_api==0.6.1
 
 # Utility packages
 python-dotenv==1.0.0
