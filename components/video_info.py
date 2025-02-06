@@ -1,13 +1,13 @@
 import streamlit as st
 
 def display_video_info(video_info: dict):
-    """Display video information section."""
+    """動画情報セクションの表示"""
     col1, col2 = st.columns([1, 2])
     
     with col1:
-        st.image(video_info['thumbnail'], use_column_width=True)
+        st.image(video_info['thumbnail'], use_container_width=True)
     
     with col2:
-        st.subheader("Video Details")
-        st.write(f"**Title:** {video_info['title']}")
-        st.write(f"**Duration:** {video_info['duration']}")
+        st.subheader("動画の詳細")
+        st.write(f"**タイトル:** {video_info['title']}")
+        st.write(f"**再生時間:** {video_info['duration']}")

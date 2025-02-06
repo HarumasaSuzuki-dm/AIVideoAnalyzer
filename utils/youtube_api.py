@@ -2,6 +2,8 @@ from typing import Dict, Optional
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import re
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.formatters import TextFormatter
 
 class YouTubeAPI:
     def __init__(self, api_key: str):
@@ -42,25 +44,28 @@ class YouTubeAPI:
         except HttpError as e:
             raise Exception(f"Error fetching video details: {str(e)}")
 
-    def get_captions(self, video_id: str) -> Optional[str]:
-        """Get video captions."""
+    def get_captions(self, video_id: str) -> str:
+        """Get video captions including auto-generated ones"""
         try:
-            captions = self.youtube.captions().list(
-                part='snippet',
-                videoId=video_id
-            ).execute()
-
-            if not captions.get('items'):
-                return None
-
-            caption_id = captions['items'][0]['id']
-            caption_track = self.youtube.captions().download(
-                id=caption_id,
-                tfmt='srt'
-            ).execute()
-
-            return self._clean_caption_text(caption_track)
-        except HttpError:
+            # まず手動字幕を試す
+            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+            
+            try:
+                # 日本語字幕を優先
+                transcript = transcript_list.find_transcript(['ja'])
+            except:
+                try:
+                    # 日本語がなければ英語字幕を取得
+                    transcript = transcript_list.find_transcript(['en'])
+                except:
+                    # 手動字幕がない場合は自動生成字幕を試す
+                    transcript = transcript_list.find_generated_transcript(['ja', 'en'])
+            
+            formatter = TextFormatter()
+            return formatter.format_transcript(transcript.fetch())
+            
+        except Exception as e:
+            logger.error(f"Caption error for video {video_id}: {str(e)}")
             return None
 
     def _clean_caption_text(self, caption_text: str) -> str:
