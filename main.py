@@ -7,8 +7,6 @@ from components.video_info import display_video_info
 from components.analysis_results import display_analysis_results
 import logging
 import os
-import sys
-import traceback
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -45,16 +43,10 @@ def check_api_keys():
 # Initialize APIs with caching
 @st.cache_resource
 def init_apis():
-    try:
-        youtube_api = YouTubeAPI(st.secrets["YOUTUBE_API_KEY"])
-        text_analyzer = TextAnalyzer(st.secrets["GEMINI_API_KEY"])
-        os.makedirs("data", exist_ok=True)
-        storage = JsonStorage("data/interviews.json")
-        return youtube_api, text_analyzer, storage
-    except Exception as e:
-        st.error(f"初期化エラー: {str(e)}")
-        st.error(f"詳細: {traceback.format_exc()}")
-        sys.exit(1)
+    youtube_api = YouTubeAPI(st.secrets["YOUTUBE_API_KEY"])
+    text_analyzer = TextAnalyzer(st.secrets["GEMINI_API_KEY"])
+    storage = JsonStorage("data/interviews.json")  # JSONストレージの初期化
+    return youtube_api, text_analyzer, storage
 
 def main():
     st.title("🎥 インタビュー分析ツール")
