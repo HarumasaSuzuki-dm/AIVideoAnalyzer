@@ -3,10 +3,8 @@ import os
 from utils.youtube_api import YouTubeAPI
 from utils.text_analysis import TextAnalyzer
 from utils.report_generator import ReportGenerator
-from utils.database import get_db, Interview
 from components.video_info import display_video_info
 from components.analysis_results import display_analysis_results
-from sqlalchemy.orm import Session
 from datetime import datetime
 
 # Page config
@@ -28,36 +26,6 @@ def init_apis():
     text_analyzer = TextAnalyzer(st.secrets["GEMINI_API_KEY"])
     return youtube_api, text_analyzer
 
-def save_analysis_to_db(
-    db: Session,
-    video_id: str,
-    video_info: dict,
-    analysis_results: dict,
-    captions: str,
-    video_url: str
-):
-    """Save analysis results to database."""
-    try:
-        interview = Interview(
-            video_id=video_id,
-            video_title=video_info['title'],
-            video_url=video_url,
-            transcript=captions,
-            summary_brief=analysis_results['summary']['brief'],
-            summary_detailed=analysis_results['summary']['detailed'],
-            key_phrases=analysis_results['key_phrases'],
-            sentiment_scores=analysis_results['sentiment'],
-            created_at=datetime.utcnow()
-        )
-
-        db.add(interview)
-        db.commit()
-        db.refresh(interview)
-        return interview
-    except Exception as e:
-        db.rollback()
-        raise Exception(f"Failed to save to database: {str(e)}")
-
 def main():
     st.title("🎥 Interview Analysis Tool")
 
@@ -70,13 +38,6 @@ def main():
         return
     except Exception as e:
         st.error(f"⚠️ Failed to initialize APIs: {str(e)}")
-        return
-
-    # Initialize database
-    try:
-        db = next(get_db())
-    except Exception as e:
-        st.error(f"⚠️ Failed to connect to database: {str(e)}")
         return
 
     # URL Input
@@ -105,20 +66,6 @@ def main():
 
                 # Analyze text
                 analysis_results = text_analyzer.analyze_text(captions)
-
-                try:
-                    # Save to database
-                    save_analysis_to_db(
-                        db=db,
-                        video_id=video_id,
-                        video_info=video_info,
-                        analysis_results=analysis_results,
-                        captions=captions,
-                        video_url=url
-                    )
-                except Exception as e:
-                    st.warning(f"⚠️ Failed to save analysis to database: {str(e)}")
-                    st.info("Continuing with analysis display...")
 
                 # Generate report
                 report = ReportGenerator.generate_report(

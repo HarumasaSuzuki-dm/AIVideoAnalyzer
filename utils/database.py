@@ -3,22 +3,11 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 from datetime import datetime
-import streamlit as st
 
 # Get database URL from environment variables
 DATABASE_URL = os.getenv('DATABASE_URL')
 if not DATABASE_URL:
-    # Construct URL from individual components if not available directly
-    host = os.getenv('PGHOST') or st.secrets.get("postgresql_host")
-    port = os.getenv('PGPORT') or st.secrets.get("postgresql_port")
-    user = os.getenv('PGUSER') or st.secrets.get("postgresql_user")
-    password = os.getenv('PGPASSWORD') or st.secrets.get("postgresql_password")
-    database = os.getenv('PGDATABASE') or st.secrets.get("postgresql_database")
-
-    if all([host, port, user, password, database]):
-        DATABASE_URL = f"postgresql://{user}:{password}@{host}:{port}/{database}"
-    else:
-        raise ValueError("Database configuration is incomplete. Please check environment variables or secrets.")
+    raise ValueError("DATABASE_URL is not set in environment variables")
 
 # Create database engine
 engine = create_engine(DATABASE_URL)
