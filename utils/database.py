@@ -5,10 +5,20 @@ import os
 from datetime import datetime
 import streamlit as st
 
-# Get database URL from environment or secrets
-DATABASE_URL = os.getenv('DATABASE_URL') or st.secrets.get("DATABASE_URL")
-if DATABASE_URL is None:
-    raise ValueError("DATABASE_URL is not set in environment variables or secrets")
+# Get database URL from environment variables
+DATABASE_URL = os.getenv('DATABASE_URL')
+if not DATABASE_URL:
+    # Construct URL from individual components if not available directly
+    host = os.getenv('PGHOST') or st.secrets.get("postgresql_host")
+    port = os.getenv('PGPORT') or st.secrets.get("postgresql_port")
+    user = os.getenv('PGUSER') or st.secrets.get("postgresql_user")
+    password = os.getenv('PGPASSWORD') or st.secrets.get("postgresql_password")
+    database = os.getenv('PGDATABASE') or st.secrets.get("postgresql_database")
+
+    if all([host, port, user, password, database]):
+        DATABASE_URL = f"postgresql://{user}:{password}@{host}:{port}/{database}"
+    else:
+        raise ValueError("Database configuration is incomplete. Please check environment variables or secrets.")
 
 # Create database engine
 engine = create_engine(DATABASE_URL)
@@ -43,7 +53,11 @@ def get_db():
 
 # Initialize database tables
 def init_db():
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+        print("Database tables created successfully")
+    except Exception as e:
+        print(f"Error creating database tables: {str(e)}")
 
 # Create tables on import
 init_db()

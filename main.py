@@ -37,22 +37,26 @@ def save_analysis_to_db(
     video_url: str
 ):
     """Save analysis results to database."""
-    interview = Interview(
-        video_id=video_id,
-        video_title=video_info['title'],
-        video_url=video_url,
-        transcript=captions,
-        summary_brief=analysis_results['summary']['brief'],
-        summary_detailed=analysis_results['summary']['detailed'],
-        key_phrases=analysis_results['key_phrases'],
-        sentiment_scores=analysis_results['sentiment'],
-        created_at=datetime.utcnow()
-    )
+    try:
+        interview = Interview(
+            video_id=video_id,
+            video_title=video_info['title'],
+            video_url=video_url,
+            transcript=captions,
+            summary_brief=analysis_results['summary']['brief'],
+            summary_detailed=analysis_results['summary']['detailed'],
+            key_phrases=analysis_results['key_phrases'],
+            sentiment_scores=analysis_results['sentiment'],
+            created_at=datetime.utcnow()
+        )
 
-    db.add(interview)
-    db.commit()
-    db.refresh(interview)
-    return interview
+        db.add(interview)
+        db.commit()
+        db.refresh(interview)
+        return interview
+    except Exception as e:
+        db.rollback()
+        raise Exception(f"Failed to save to database: {str(e)}")
 
 def main():
     st.title("🎥 Interview Analysis Tool")
@@ -102,15 +106,19 @@ def main():
                 # Analyze text
                 analysis_results = text_analyzer.analyze_text(captions)
 
-                # Save to database
-                save_analysis_to_db(
-                    db=db,
-                    video_id=video_id,
-                    video_info=video_info,
-                    analysis_results=analysis_results,
-                    captions=captions,
-                    video_url=url
-                )
+                try:
+                    # Save to database
+                    save_analysis_to_db(
+                        db=db,
+                        video_id=video_id,
+                        video_info=video_info,
+                        analysis_results=analysis_results,
+                        captions=captions,
+                        video_url=url
+                    )
+                except Exception as e:
+                    st.warning(f"⚠️ Failed to save analysis to database: {str(e)}")
+                    st.info("Continuing with analysis display...")
 
                 # Generate report
                 report = ReportGenerator.generate_report(
