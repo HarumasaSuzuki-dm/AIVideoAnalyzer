@@ -39,4 +39,9 @@ data/*.json
 
 # OS
 .DS_Store
-Thumbs.db 
+Thumbs.db
+
+# Package management
+*.lock
+pyproject.toml
+poetry.lock 
