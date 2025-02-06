@@ -3,8 +3,8 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import re
 import logging
-from youtube_transcript_api import YouTubeTranscriptApi
-from youtube_transcript_api.formatters import TextFormatter
+from pytube import YouTube
+import youtube_dl
 
 logger = logging.getLogger(__name__)
 
@@ -50,24 +50,40 @@ class YouTubeAPI:
             raise
 
     def get_captions(self, video_id: str) -> Optional[str]:
-        """Get video captions including auto-generated ones"""
+        """Get video captions using youtube-dl and pytube"""
         try:
-            transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+            # まずpytubeで試す
+            url = f'https://www.youtube.com/watch?v={video_id}'
+            yt = YouTube(url)
+            captions = yt.captions
             
-            try:
-                transcript = transcript_list.find_transcript(['ja'])
-            except:
-                try:
-                    transcript = transcript_list.find_transcript(['en'])
-                except:
-                    try:
-                        transcript = transcript_list.find_generated_transcript(['ja', 'en'])
-                    except Exception as e:
-                        logger.error(f"No transcripts found: {str(e)}")
-                        return None
-
-            formatter = TextFormatter()
-            return formatter.format_transcript(transcript.fetch())
+            # 日本語字幕を探す
+            caption = None
+            if 'ja' in captions:
+                caption = captions['ja']
+            elif 'a.ja' in captions:  # 自動生成字幕
+                caption = captions['a.ja']
+            elif 'en' in captions:
+                caption = captions['en']
+            
+            if caption:
+                return caption.generate_srt_captions()
+            
+            # pytubeで取得できない場合はyoutube-dlを試す
+            ydl_opts = {
+                'writesubtitles': True,
+                'subtitleslangs': ['ja', 'en'],
+                'skip_download': True,
+            }
+            
+            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                info = ydl.extract_info(url, download=False)
+                if 'subtitles' in info:
+                    for lang in ['ja', 'en']:
+                        if lang in info['subtitles']:
+                            return info['subtitles'][lang][0]['data']
+            
+            return None
             
         except Exception as e:
             logger.error(f"Caption error for video {video_id}: {str(e)}")
