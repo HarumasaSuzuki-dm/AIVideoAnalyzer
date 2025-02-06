@@ -3,11 +3,12 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 from datetime import datetime
+import streamlit as st
 
-# Get database URL from environment
-DATABASE_URL = os.getenv('DATABASE_URL')
+# Get database URL from environment or secrets
+DATABASE_URL = os.getenv('DATABASE_URL') or st.secrets.get("DATABASE_URL")
 if DATABASE_URL is None:
-    raise ValueError("DATABASE_URL environment variable is not set")
+    raise ValueError("DATABASE_URL is not set in environment variables or secrets")
 
 # Create database engine
 engine = create_engine(DATABASE_URL)
@@ -40,5 +41,9 @@ def get_db():
     finally:
         db.close()
 
-# Create all tables
-Base.metadata.create_all(bind=engine)
+# Initialize database tables
+def init_db():
+    Base.metadata.create_all(bind=engine)
+
+# Create tables on import
+init_db()
