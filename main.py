@@ -9,43 +9,55 @@ import logging
 import os
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 logger = logging.getLogger(__name__)
 
 # Page config
 st.set_page_config(
     page_title="インタビュー分析ツール",
     page_icon="🎥",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 def check_api_keys():
     """APIキーの存在確認と検証"""
-    required_keys = {
-        "YOUTUBE_API_KEY": st.secrets.get("YOUTUBE_API_KEY"),
-        "GEMINI_API_KEY": st.secrets.get("GEMINI_API_KEY")
-    }
-    
-    missing_keys = [key for key, value in required_keys.items() if not value]
-    
-    if missing_keys:
-        st.error(f"⚠️ 以下のAPIキーが設定されていません: {', '.join(missing_keys)}")
-        st.info("""
-        APIキーの設定方法:
-        1. `.streamlit/secrets.toml` ファイルを作成してください
-        2. 以下の形式でAPIキーを設定してください:
-           YOUTUBE_API_KEY = "あなたのYouTube APIキー"
-           GEMINI_API_KEY = "あなたのGemini APIキー"
-        """)
+    try:
+        required_keys = {
+            "YOUTUBE_API_KEY": st.secrets.get("YOUTUBE_API_KEY"),
+            "GEMINI_API_KEY": st.secrets.get("GEMINI_API_KEY")
+        }
+        
+        missing_keys = [key for key, value in required_keys.items() if not value]
+        
+        if missing_keys:
+            st.error(f"⚠️ 以下のAPIキーが設定されていません: {', '.join(missing_keys)}")
+            st.info("""
+            APIキーの設定方法:
+            1. Streamlit Cloudの設定画面でシークレットを設定してください
+            2. 以下の形式でAPIキーを設定してください:
+               YOUTUBE_API_KEY = "あなたのYouTube APIキー"
+               GEMINI_API_KEY = "あなたのGemini APIキー"
+            """)
+            return False
+        return True
+    except Exception as e:
+        logger.error(f"API key validation error: {str(e)}")
+        st.error("APIキーの検証中にエラーが発生しました")
         return False
-    return True
 
 # Initialize APIs with caching
 @st.cache_resource
 def init_apis():
+    # データディレクトリの作成
+    os.makedirs("data", exist_ok=True)
+    
     youtube_api = YouTubeAPI(st.secrets["YOUTUBE_API_KEY"])
     text_analyzer = TextAnalyzer(st.secrets["GEMINI_API_KEY"])
-    storage = JsonStorage("data/interviews.json")  # JSONストレージの初期化
+    storage = JsonStorage("data/interviews.json")
     return youtube_api, text_analyzer, storage
 
 def main():
